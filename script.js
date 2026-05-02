@@ -16,6 +16,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const loadExampleBtn = document.getElementById('load-example-btn');
 
     let isProcessing = false;
+    let lastFile = null; // Store the last uploaded file for re-processing
 
     // --- Drag and Drop Logic ---
     // Prevent default global browser behavior so missing the dropzone doesn't open the file
@@ -82,9 +83,18 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
         
+        lastFile = file; // Save for language re-processing
         showProcessingUI();
         await processFile(file);
     }
+
+    // Re-run OCR when language changes if a file is already loaded
+    languageSelect.addEventListener('change', async () => {
+        if (lastFile && !isProcessing) {
+            showProcessingUI();
+            await processFile(lastFile);
+        }
+    });
 
     async function processFile(file) {
         isProcessing = true;
