@@ -147,24 +147,27 @@ document.addEventListener('DOMContentLoaded', () => {
         const lang = languageSelect.value;
         updateStatus('Initializing AI Engine...', 30);
 
-        const worker = await Tesseract.createWorker({
-            logger: m => {
-                if (m.status === 'recognizing text') {
-                    updateStatus('Extracting text...', 30 + Math.round(m.progress * 70));
-                } else {
-                    updateStatus(m.status.charAt(0).toUpperCase() + m.status.slice(1) + '...', 30);
+        try {
+            const { data: { text } } = await Tesseract.recognize(
+                imageSource,
+                lang,
+                {
+                    logger: m => {
+                        if (m.status === 'recognizing text') {
+                            updateStatus('Extracting text...', 30 + Math.round(m.progress * 70));
+                        } else {
+                            updateStatus(m.status.charAt(0).toUpperCase() + m.status.slice(1) + '...', 30);
+                        }
+                    }
                 }
-            }
-        });
-
-        await worker.loadLanguage(lang);
-        await worker.initialize(lang);
-        
-        const { data: { text } } = await worker.recognize(imageSource);
-        
-        await worker.terminate();
-
-        showResult(text);
+            );
+            
+            showResult(text);
+        } catch (err) {
+            console.error(err);
+            alert("OCR Engine Error. Check the console for more details.");
+            resetUI();
+        }
     }
 
     // --- UI State Management ---
