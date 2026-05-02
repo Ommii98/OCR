@@ -134,10 +134,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         
                         const imageDataUrl = canvas.toDataURL('image/png');
                         
-                        // Show preview of the first page being processed
-                        if (i === 1) {
-                            document.getElementById('preview-image').src = imageDataUrl;
-                        }
+                        // Dynamically update the preview image to show the current page being processed
+                        document.getElementById('preview-image').src = imageDataUrl;
 
                         // 2. OCR that specific page immediately to save memory
                         updateStatus(`Initializing AI Engine (Page ${i}/${numPages})...`, 20);
