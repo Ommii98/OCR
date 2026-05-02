@@ -159,9 +159,15 @@ document.addEventListener('DOMContentLoaded', () => {
                             lang,
                             {
                                 logger: m => {
-                                    if (m.status === 'recognizing text') {
-                                        let base = 20;
-                                        let currentProgress = m.progress * 80;
+                                    if (m.status === 'loading tesseract core') {
+                                        updateStatus(`Loading AI Engine (Page ${i}/${numPages})...`, 20);
+                                    } else if (m.status === 'loading language traineddata') {
+                                        updateStatus(`Downloading ${languageSelect.options[languageSelect.selectedIndex].text} language data...`, 25);
+                                    } else if (m.status === 'initializing api') {
+                                        updateStatus(`Initializing AI (Page ${i}/${numPages})...`, 30);
+                                    } else if (m.status === 'recognizing text') {
+                                        let base = 30;
+                                        let currentProgress = m.progress * 70;
                                         updateStatus(`Extracting text (Page ${i}/${numPages})...`, Math.round(base + currentProgress));
                                     }
                                 }
@@ -203,8 +209,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     lang,
                     {
                         logger: m => {
-                            if (m.status === 'recognizing text') {
-                                let totalProgress = Math.round(20 + (m.progress * 80));
+                            if (m.status === 'loading tesseract core') {
+                                updateStatus(`Loading AI Engine...`, 20);
+                            } else if (m.status === 'loading language traineddata') {
+                                updateStatus(`Downloading ${languageSelect.options[languageSelect.selectedIndex].text} language data...`, 25);
+                            } else if (m.status === 'initializing api') {
+                                updateStatus(`Initializing AI...`, 30);
+                            } else if (m.status === 'recognizing text') {
+                                let totalProgress = Math.round(30 + (m.progress * 70));
                                 updateStatus(`Extracting text...`, totalProgress);
                             }
                         }
