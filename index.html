@@ -83,14 +83,19 @@
 
             <!-- Result Area -->
             <div class="result-area hidden" id="result-area">
-                <div class="result-header">
-                    <h2>Extracted Text</h2>
-                    <div class="actions">
-                        <button id="copy-btn" class="icon-btn" title="Copy to clipboard"><i class="ph ph-copy"></i> Copy</button>
-                        <button id="reset-btn" class="icon-btn" title="Process another file"><i class="ph ph-arrow-counter-clockwise"></i> Reset</button>
-                    </div>
+                <div class="document-preview">
+                    <img id="preview-image" src="" alt="Document Preview">
                 </div>
-                <textarea id="result-text" readonly placeholder="Text will appear here..."></textarea>
+                <div class="text-output-section">
+                    <div class="result-header">
+                        <h2>Extracted Text</h2>
+                        <div class="actions">
+                            <button id="copy-btn" class="icon-btn" title="Copy to clipboard"><i class="ph ph-copy"></i> Copy</button>
+                            <button id="reset-btn" class="icon-btn" title="Process another file"><i class="ph ph-arrow-counter-clockwise"></i> Reset</button>
+                        </div>
+                    </div>
+                    <textarea id="result-text" readonly placeholder="Text will appear here..."></textarea>
+                </div>
             </div>
         </section>
 

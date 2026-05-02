@@ -89,14 +89,20 @@ document.addEventListener('DOMContentLoaded', () => {
     async function processFile(file) {
         isProcessing = true;
         let imageToOcr = null;
+        let previewSrc = null;
 
         try {
             if (file.type === 'application/pdf') {
                 updateStatus('Converting PDF to Image...', 20);
                 imageToOcr = await convertPdfToImage(file);
+                previewSrc = imageToOcr;
             } else {
                 imageToOcr = file;
+                previewSrc = URL.createObjectURL(file);
             }
+
+            // Set preview image
+            document.getElementById('preview-image').src = previewSrc;
 
             await performOCR(imageToOcr);
 
