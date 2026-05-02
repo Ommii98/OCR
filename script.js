@@ -18,6 +18,11 @@ document.addEventListener('DOMContentLoaded', () => {
     let isProcessing = false;
 
     // --- Drag and Drop Logic ---
+    // Prevent default global browser behavior so missing the dropzone doesn't open the file
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        window.addEventListener(eventName, (e) => e.preventDefault(), false);
+    });
+
     dropZone.addEventListener('click', () => {
         if (!isProcessing) fileInput.click();
     });
@@ -28,8 +33,11 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    dropZone.addEventListener('dragover', (e) => {
-        e.preventDefault();
+    dropZone.addEventListener('dragenter', () => {
+        if (!isProcessing) dropZone.classList.add('dragover');
+    });
+
+    dropZone.addEventListener('dragover', () => {
         if (!isProcessing) dropZone.classList.add('dragover');
     });
 
@@ -38,7 +46,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     dropZone.addEventListener('drop', (e) => {
-        e.preventDefault();
         dropZone.classList.remove('dragover');
         
         if (!isProcessing && e.dataTransfer.files.length > 0) {
