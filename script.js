@@ -88,24 +88,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function processFile(file) {
         isProcessing = true;
-        let imagesToOcr = [];
         let previewSrc = null;
 
         try {
             if (file.type === 'application/pdf') {
-                updateStatus('Reading PDF Document...', 10);
-                imagesToOcr = await convertPdfToImages(file);
-                previewSrc = imagesToOcr[0]; // Preview the first page
+                await processMultiPagePdf(file);
             } else {
-                imagesToOcr = [file];
                 previewSrc = URL.createObjectURL(file);
+                document.getElementById('preview-image').src = previewSrc;
+                await performOCR([file], false);
+                URL.revokeObjectURL(previewSrc);
             }
-
-            // Set preview image
-            document.getElementById('preview-image').src = previewSrc;
-
-            await performOCR(imagesToOcr);
-
         } catch (error) {
             console.error(error);
             alert('An error occurred during processing: ' + error.message);
@@ -115,7 +108,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    async function convertPdfToImages(file) {
+    async function processMultiPagePdf(file) {
+        const lang = languageSelect.value;
+        let fullText = '';
+        
         return new Promise((resolve, reject) => {
             const reader = new FileReader();
             reader.onload = async function(e) {
@@ -123,24 +119,55 @@ document.addEventListener('DOMContentLoaded', () => {
                     const typedarray = new Uint8Array(e.target.result);
                     const pdf = await pdfjsLib.getDocument(typedarray).promise;
                     const numPages = pdf.numPages;
-                    let images = [];
                     
                     for (let i = 1; i <= numPages; i++) {
-                        updateStatus(`Converting PDF Page ${i} of ${numPages}...`, 10 + Math.round((i / numPages) * 10));
+                        // 1. Convert specific page
+                        updateStatus(`Rendering PDF Page ${i}/${numPages}...`, 10);
                         const page = await pdf.getPage(i);
-                        
-                        // Render page to canvas (Scale 1.5 for faster OCR processing)
                         const viewport = page.getViewport({ scale: 1.5 });
                         const canvas = document.createElement('canvas');
                         const context = canvas.getContext('2d');
                         
                         canvas.height = viewport.height;
                         canvas.width = viewport.width;
-                        
                         await page.render({ canvasContext: context, viewport: viewport }).promise;
-                        images.push(canvas.toDataURL('image/png'));
+                        
+                        const imageDataUrl = canvas.toDataURL('image/png');
+                        
+                        // Show preview of the first page being processed
+                        if (i === 1) {
+                            document.getElementById('preview-image').src = imageDataUrl;
+                        }
+
+                        // 2. OCR that specific page immediately to save memory
+                        updateStatus(`Initializing AI Engine (Page ${i}/${numPages})...`, 20);
+                        const { data: { text } } = await Tesseract.recognize(
+                            imageDataUrl,
+                            lang,
+                            {
+                                logger: m => {
+                                    if (m.status === 'recognizing text') {
+                                        let base = 20;
+                                        let currentProgress = m.progress * 80;
+                                        updateStatus(`Extracting text (Page ${i}/${numPages})...`, Math.round(base + currentProgress));
+                                    }
+                                }
+                            }
+                        );
+                        
+                        if (numPages > 1) {
+                            fullText += `--- Page ${i} ---\n\n${text}\n\n`;
+                        } else {
+                            fullText += text;
+                        }
+                        
+                        // Clear canvas to free memory immediately
+                        canvas.width = 0;
+                        canvas.height = 0;
                     }
-                    resolve(images);
+                    
+                    showResult(fullText.trim());
+                    resolve();
                 } catch (err) {
                     reject(err);
                 }
@@ -149,16 +176,14 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // --- OCR via Tesseract.js ---
-    async function performOCR(imageSources) {
+    // --- OCR via Tesseract.js (For single images only) ---
+    async function performOCR(imageSources, isMultiPage) {
         const lang = languageSelect.value;
         let fullText = '';
-        const isMultiPage = imageSources.length > 1;
 
         try {
             for (let i = 0; i < imageSources.length; i++) {
-                const pageLabel = isMultiPage ? ` (Page ${i + 1}/${imageSources.length})` : '';
-                updateStatus(`Initializing AI Engine${pageLabel}...`, 20);
+                updateStatus(`Initializing AI Engine...`, 20);
 
                 const { data: { text } } = await Tesseract.recognize(
                     imageSources[i],
@@ -166,25 +191,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     {
                         logger: m => {
                             if (m.status === 'recognizing text') {
-                                let baseProgress = 20; 
-                                let totalAllocatedForOCR = 80;
-                                let progressPerImage = totalAllocatedForOCR / imageSources.length;
-                                
-                                let previousProgress = i * progressPerImage;
-                                let currentProgress = m.progress * progressPerImage;
-                                
-                                let totalProgress = Math.round(baseProgress + previousProgress + currentProgress);
-                                updateStatus(`Extracting text${pageLabel}...`, totalProgress);
+                                let totalProgress = Math.round(20 + (m.progress * 80));
+                                updateStatus(`Extracting text...`, totalProgress);
                             }
                         }
                     }
                 );
-                
-                if (isMultiPage) {
-                    fullText += `--- Page ${i + 1} ---\n\n${text}\n\n`;
-                } else {
-                    fullText += text;
-                }
+                fullText += text;
             }
             
             showResult(fullText.trim());
