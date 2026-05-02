@@ -122,8 +122,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     // We'll process the first page
                     const page = await pdf.getPage(1);
                     
-                    // Render page to canvas (Scale 2 for better OCR quality)
-                    const viewport = page.getViewport({ scale: 2.0 });
+                    // Render page to canvas (Scale 1.5 for faster OCR processing while maintaining accuracy)
+                    const viewport = page.getViewport({ scale: 1.5 });
                     const canvas = document.createElement('canvas');
                     const context = canvas.getContext('2d');
                     
