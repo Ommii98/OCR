@@ -88,23 +88,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function processFile(file) {
         isProcessing = true;
-        let imageToOcr = null;
+        let imagesToOcr = [];
         let previewSrc = null;
 
         try {
             if (file.type === 'application/pdf') {
-                updateStatus('Converting PDF to Image...', 20);
-                imageToOcr = await convertPdfToImage(file);
-                previewSrc = imageToOcr;
+                updateStatus('Reading PDF Document...', 10);
+                imagesToOcr = await convertPdfToImages(file);
+                previewSrc = imagesToOcr[0]; // Preview the first page
             } else {
-                imageToOcr = file;
+                imagesToOcr = [file];
                 previewSrc = URL.createObjectURL(file);
             }
 
             // Set preview image
             document.getElementById('preview-image').src = previewSrc;
 
-            await performOCR(imageToOcr);
+            await performOCR(imagesToOcr);
 
         } catch (error) {
             console.error(error);
@@ -115,31 +115,32 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    async function convertPdfToImage(file) {
+    async function convertPdfToImages(file) {
         return new Promise((resolve, reject) => {
             const reader = new FileReader();
             reader.onload = async function(e) {
                 try {
                     const typedarray = new Uint8Array(e.target.result);
-                    
-                    // Load PDF using pdf.js
                     const pdf = await pdfjsLib.getDocument(typedarray).promise;
+                    const numPages = pdf.numPages;
+                    let images = [];
                     
-                    // We'll process the first page
-                    const page = await pdf.getPage(1);
-                    
-                    // Render page to canvas (Scale 1.5 for faster OCR processing while maintaining accuracy)
-                    const viewport = page.getViewport({ scale: 1.5 });
-                    const canvas = document.createElement('canvas');
-                    const context = canvas.getContext('2d');
-                    
-                    canvas.height = viewport.height;
-                    canvas.width = viewport.width;
-                    
-                    await page.render({ canvasContext: context, viewport: viewport }).promise;
-                    
-                    // Convert canvas to image DataURL
-                    resolve(canvas.toDataURL('image/png'));
+                    for (let i = 1; i <= numPages; i++) {
+                        updateStatus(`Converting PDF Page ${i} of ${numPages}...`, 10 + Math.round((i / numPages) * 10));
+                        const page = await pdf.getPage(i);
+                        
+                        // Render page to canvas (Scale 1.5 for faster OCR processing)
+                        const viewport = page.getViewport({ scale: 1.5 });
+                        const canvas = document.createElement('canvas');
+                        const context = canvas.getContext('2d');
+                        
+                        canvas.height = viewport.height;
+                        canvas.width = viewport.width;
+                        
+                        await page.render({ canvasContext: context, viewport: viewport }).promise;
+                        images.push(canvas.toDataURL('image/png'));
+                    }
+                    resolve(images);
                 } catch (err) {
                     reject(err);
                 }
@@ -149,26 +150,44 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- OCR via Tesseract.js ---
-    async function performOCR(imageSource) {
+    async function performOCR(imageSources) {
         const lang = languageSelect.value;
-        updateStatus('Initializing AI Engine...', 30);
+        let fullText = '';
+        const isMultiPage = imageSources.length > 1;
 
         try {
-            const { data: { text } } = await Tesseract.recognize(
-                imageSource,
-                lang,
-                {
-                    logger: m => {
-                        if (m.status === 'recognizing text') {
-                            updateStatus('Extracting text...', 30 + Math.round(m.progress * 70));
-                        } else {
-                            updateStatus(m.status.charAt(0).toUpperCase() + m.status.slice(1) + '...', 30);
+            for (let i = 0; i < imageSources.length; i++) {
+                const pageLabel = isMultiPage ? ` (Page ${i + 1}/${imageSources.length})` : '';
+                updateStatus(`Initializing AI Engine${pageLabel}...`, 20);
+
+                const { data: { text } } = await Tesseract.recognize(
+                    imageSources[i],
+                    lang,
+                    {
+                        logger: m => {
+                            if (m.status === 'recognizing text') {
+                                let baseProgress = 20; 
+                                let totalAllocatedForOCR = 80;
+                                let progressPerImage = totalAllocatedForOCR / imageSources.length;
+                                
+                                let previousProgress = i * progressPerImage;
+                                let currentProgress = m.progress * progressPerImage;
+                                
+                                let totalProgress = Math.round(baseProgress + previousProgress + currentProgress);
+                                updateStatus(`Extracting text${pageLabel}...`, totalProgress);
+                            }
                         }
                     }
+                );
+                
+                if (isMultiPage) {
+                    fullText += `--- Page ${i + 1} ---\n\n${text}\n\n`;
+                } else {
+                    fullText += text;
                 }
-            );
+            }
             
-            showResult(text);
+            showResult(fullText.trim());
         } catch (err) {
             console.error(err);
             alert("OCR Engine Error. Check the console for more details.");
