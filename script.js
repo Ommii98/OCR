@@ -91,11 +91,19 @@ document.addEventListener('DOMContentLoaded', () => {
         let previewSrc = null;
 
         try {
+            const previewContainer = document.getElementById('preview-container');
+            previewContainer.innerHTML = ''; // Clear previous previews
+
             if (file.type === 'application/pdf') {
                 await processMultiPagePdf(file);
             } else {
                 previewSrc = URL.createObjectURL(file);
-                document.getElementById('preview-image').src = previewSrc;
+                
+                const img = document.createElement('img');
+                img.src = previewSrc;
+                img.alt = 'Uploaded Image';
+                previewContainer.appendChild(img);
+                
                 await performOCR([file], false);
                 URL.revokeObjectURL(previewSrc);
             }
@@ -111,6 +119,7 @@ document.addEventListener('DOMContentLoaded', () => {
     async function processMultiPagePdf(file) {
         const lang = languageSelect.value;
         let fullText = '';
+        const previewContainer = document.getElementById('preview-container');
         
         return new Promise((resolve, reject) => {
             const reader = new FileReader();
@@ -134,8 +143,14 @@ document.addEventListener('DOMContentLoaded', () => {
                         
                         const imageDataUrl = canvas.toDataURL('image/png');
                         
-                        // Dynamically update the preview image to show the current page being processed
-                        document.getElementById('preview-image').src = imageDataUrl;
+                        // Append the new page to the scrollable preview window
+                        const img = document.createElement('img');
+                        img.src = imageDataUrl;
+                        img.alt = `Page ${i}`;
+                        previewContainer.appendChild(img);
+                        
+                        // Scroll to the bottom as new pages are added
+                        previewContainer.scrollTop = previewContainer.scrollHeight;
 
                         // 2. OCR that specific page immediately to save memory
                         updateStatus(`Initializing AI Engine (Page ${i}/${numPages})...`, 20);
