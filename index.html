@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OCR PDFs and images directly in your browser</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <!-- Phosphor Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+    <!-- Main Stylesheet -->
+    <link rel="stylesheet" href="style.css">
+    
+    <!-- PDF.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>
+        // Set worker URL for PDF.js
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    </script>
+</head>
+<body>
+    <div class="background-effects">
+        <div class="glow glow-1"></div>
+        <div class="glow glow-2"></div>
+    </div>
+
+    <main class="container">
+        <header class="header">
+            <h1>OCR PDFs and images directly in your browser</h1>
+            <p class="privacy-note">This tool runs entirely in your browser. <strong>No files are uploaded to a server.</strong></p>
+            <p class="tech-note">It uses <a href="https://tesseract.projectnaptha.com/" target="_blank">Tesseract.js</a> for OCR and <a href="https://mozilla.github.io/pdf.js/" target="_blank">PDF.js</a> to convert PDFs into images.</p>
+        </header>
+
+        <div class="controls-bar">
+            <div class="language-selector">
+                <label for="language-select">Language:</label>
+                <div class="select-wrapper">
+                    <select id="language-select">
+                        <option value="eng" selected>English</option>
+                        <option value="spa">Spanish</option>
+                        <option value="fra">French</option>
+                        <option value="deu">German</option>
+                        <option value="ita">Italian</option>
+                        <option value="por">Portuguese</option>
+                        <option value="rus">Russian</option>
+                        <option value="chi_sim">Chinese (Simplified)</option>
+                        <option value="jpn">Japanese</option>
+                        <option value="kor">Korean</option>
+                    </select>
+                    <i class="ph ph-caret-down"></i>
+                </div>
+            </div>
+            
+            <button id="load-example-btn" class="secondary-btn">Load example PDF</button>
+        </div>
+
+        <section class="workspace">
+            <!-- Upload Area -->
+            <div class="upload-area" id="drop-zone">
+                <input type="file" id="file-input" accept="image/*,application/pdf" hidden>
+                
+                <div class="upload-content" id="upload-content">
+                    <i class="ph ph-upload-simple upload-icon"></i>
+                    <h3>Drag and drop a PDF, JPG, PNG, or GIF file here or click to select a file</h3>
+                </div>
+                
+                <!-- Progress UI (Hidden by default) -->
+                <div class="processing-ui hidden" id="processing-ui">
+                    <div class="spinner"><i class="ph ph-spinner-gap"></i></div>
+                    <div class="progress-info">
+                        <p id="status-text">Processing...</p>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="progress-fill"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Result Area -->
+            <div class="result-area hidden" id="result-area">
+                <div class="result-header">
+                    <h2>Extracted Text</h2>
+                    <div class="actions">
+                        <button id="copy-btn" class="icon-btn" title="Copy to clipboard"><i class="ph ph-copy"></i> Copy</button>
+                        <button id="reset-btn" class="icon-btn" title="Process another file"><i class="ph ph-arrow-counter-clockwise"></i> Reset</button>
+                    </div>
+                </div>
+                <textarea id="result-text" readonly placeholder="Text will appear here..."></textarea>
+            </div>
+        </section>
+
+        <footer class="footer">
+            <div class="links">
+                <a href="https://github.com/Ommii98/OCR" target="_blank" rel="noopener">Source code</a>, 
+                <a href="https://github.com/Ommii98/OCR#readme" target="_blank" rel="noopener">How I built this</a>.
+            </div>
+            <div class="bottom-links">
+                <a href="https://github.com/Ommii98" target="_blank" rel="noopener">Home</a>
+                <a href="https://github.com/Ommii98" target="_blank" rel="noopener">About</a>
+                <a href="https://github.com/Ommii98" target="_blank" rel="noopener">Portfolio</a>
+                <span class="date">Updated 2026-05-02</span>
+            </div>
+        </footer>
+    </main>
+
+    <!-- Tesseract.js -->
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+    
+    <!-- Main Script -->
+    <script src="script.js"></script>
+</body>
+</html>
